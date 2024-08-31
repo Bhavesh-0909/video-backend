@@ -2,10 +2,23 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const mediasoup = require('mediasoup');
+const cors = require('cors');
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = socketIo(server, {
+    cors: {
+        origin: "http://localhost:3001", // Allow requests from your frontend URL
+        methods: ["GET", "POST"],
+        credentials: true
+    }
+});
+
+app.use(cors({
+    origin: "http://localhost:3001", // Same as above
+    methods: ["GET", "POST"],
+    credentials: true
+}));
 
 const rooms = {}; // Store room information
 
@@ -28,6 +41,7 @@ io.on('connection', socket => {
         if (rooms[roomId]) {
             callback('Room already exists');
         } else {
+            console.log(`Room created: ${roomId}`);
             const worker = await createWorker();
             const router = await worker.createRouter({
                 mediaCodecs: [
@@ -118,4 +132,8 @@ const createWebRtcTransport = async (router) => {
 
 server.listen(3000, () => {
     console.log('Server running on port 3000');
+});
+
+app.get('/', (req, res) => {
+    res.send({});
 });
